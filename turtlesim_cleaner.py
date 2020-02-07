@@ -39,8 +39,6 @@ def move(speed, distance):
         vel_publisher.publish(vel_msg)
         loop_rate.sleep()
 
-        distance_moved = distance_moved + \
-            abs(0.5 * math.sqrt(((x-x0) ** 2) + ((y-y0) ** 2)))
         print distance_moved
         if (distance_moved > distance):
             rospy.loginfo("Reached")
