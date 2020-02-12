@@ -60,6 +60,7 @@ def move(speed, distance, isForward):
 
 
 def rotate():
+    vel_msg = Twist()  # creating an instance of Twist message type
 
 
 def Reset():
