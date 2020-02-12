@@ -21,14 +21,14 @@ def poseCallBack(pose_message):
     yaw = pose_message.theta
 
 
-def move(speed, distance, isForward):
+def move(linear_speed, desired_distance, isForward):
 
     vel_msg = Twist()  # creating an instance of Twist message type
 
     if (isForward):
-        vel_msg.linear.x = abs(speed)
+        vel_msg.linear.x = abs(linear_speed)
     else:
-        vel_msg.linear.x = -abs(speed)
+        vel_msg.linear.x = -abs(linear_speed)
 
     # initializing parameters
     vel_msg.linear.y = 0
@@ -36,7 +36,7 @@ def move(speed, distance, isForward):
     vel_msg.angular.x = 0
     vel_msg.angular.y = 0
     vel_msg.angular.z = 0
-    distance_traveled = 0.0
+    traveled_distance = 0.0
 
     t0 = rospy.get_time()
     loop_rate = rospy.Rate(100)
@@ -46,12 +46,12 @@ def move(speed, distance, isForward):
         vel_publisher.publish(vel_msg)
         t1 = rospy.get_time()
 
-        distance_traveled = speed * (t1 - t0)
+        traveled_distance = linear_speed * (t1 - t0)
         rospy.spin
         loop_rate.sleep()
 
-        print distance_traveled
-        if (distance_traveled > distance):
+        print traveled_distance
+        if (traveled_distance > desired_distance):
             rospy.loginfo("Reached")
             break
 
@@ -59,8 +59,45 @@ def move(speed, distance, isForward):
     vel_publisher.publish(vel_msg)
 
 
-def rotate():
+def rotate(angular_speed, desired_angle, isClockwise):
     vel_msg = Twist()  # creating an instance of Twist message type
+
+    if (isClockwise):
+        vel_msg.angular.z = abs(angular_speed)
+    else:
+        vel_msg.angular.z = -abs(angular_speed)
+
+    # initializing parameters
+    vel_msg.linear.x = 0
+    vel_msg.linear.y = 0
+    vel_msg.linear.z = 0
+    vel_msg.angular.x = 0
+    vel_msg.angular.y = 0
+    traveled_angle = 0.0
+
+    t0 = rospy.get_time()
+    loop_rate = rospy.Rate(100)
+
+    while True:
+        rospy.loginfo("Turtlesim rotating")
+        vel_publisher.publish(vel_msg)
+        t1 = rospy.get_time()
+
+        traveled_angle = angular_speed * (t1 - t0)
+        rospy.spin
+        loop_rate.sleep()
+
+        print traveled_angle
+        if (traveled_angle > desired_angle):
+            rospy.loginfo("Reached")
+            break
+
+    vel_msg.angular.z = 0
+    vel_publisher.publish(vel_msg)
+
+
+def degreesToRadians(angle_in_degrees):
+    return angle_in_degrees * math.pi / 180
 
 
 def Reset():
@@ -78,4 +115,5 @@ if __name__ == "__main__":
     pose_subscriber = rospy.Subscriber("/turtle1/pose", Pose, poseCallBack)
     time.sleep(2)
     move(2, 5, False)
+    rotate(1, 180, True)
     Reset()
