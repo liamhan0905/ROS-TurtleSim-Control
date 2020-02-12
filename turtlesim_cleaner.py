@@ -59,6 +59,9 @@ def move(speed, distance, isForward):
     vel_publisher.publish(vel_msg)
 
 
+def rotate():
+
+
 def Reset():
     rospy.wait_for_service('reset')
     reset_turtle = rospy.ServiceProxy('reset', Empty)
