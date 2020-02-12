@@ -97,6 +97,7 @@ def rotate(angular_speed, desired_angle, isClockwise):
 
 
 def moveToGoal():
+    print movetot = goals
     pass
 
 
