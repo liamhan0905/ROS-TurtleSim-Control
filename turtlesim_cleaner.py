@@ -96,9 +96,6 @@ def rotate(angular_speed, desired_angle, isClockwise):
     vel_publisher.publish(vel_msg)
 
 
-print test
-
-
 def degreesToRadians(angle_in_degrees):
     return angle_in_degrees * math.pi / 180
 
