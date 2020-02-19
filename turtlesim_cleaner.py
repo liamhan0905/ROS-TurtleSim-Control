@@ -9,15 +9,15 @@ from std_srvs.srv import Empty
 x = 0
 y = 0
 z = 0
-yaw = 0
+theta = 0
 
 
 def poseCallBack(pose_message):
-    global x, y, yaw
+    global x, y, theta
 
     x = pose_message.x
     y = pose_message.y
-    yaw = pose_message.theta
+    theta = pose_message.theta
 
 
 def move(linear_speed, desired_distance, isForward):
@@ -37,13 +37,13 @@ def move(linear_speed, desired_distance, isForward):
     vel_msg.angular.z = 0
     traveled_distance = 0.0
 
-    t0 = rospy.get_time()
+    t0 = rospy.Time.now().to_sec()
     loop_rate = rospy.Rate(100)
 
     while True:
         rospy.loginfo("Turtlesim moving forward")
         vel_publisher.publish(vel_msg)
-        t1 = rospy.get_time()
+        t1 = rospy.Time.now().to_sec()
 
         traveled_distance = linear_speed * (t1 - t0)
         rospy.spin
@@ -58,14 +58,14 @@ def move(linear_speed, desired_distance, isForward):
     vel_publisher.publish(vel_msg)
 
 
-def rotate(angular_speed, desired_angle, isClockwise):
-    global yaw
+def rotate(angular_speed_rad, desired_angle, isClockwise):
+    global theta
     vel_msg = Twist()  # creating an instance of Twist message type
 
     if (isClockwise):
-        vel_msg.angular.z = abs(angular_speed)
+        vel_msg.angular.z = abs(angular_speed_rad)
     else:
-        vel_msg.angular.z = -abs(angular_speed)
+        vel_msg.angular.z = -abs(angular_speed_rad)
 
     # initializing parameters
     vel_msg.linear.x = 0
@@ -75,20 +75,20 @@ def rotate(angular_speed, desired_angle, isClockwise):
     vel_msg.angular.y = 0
     traveled_angle = 0.0
 
-    t0 = rospy.get_time()
+    t0 = rospy.Time.now().to_sec()
     loop_rate = rospy.Rate(100)
 
     while True:
         rospy.loginfo("Turtlesim rotating")
         vel_publisher.publish(vel_msg)
-        t1 = rospy.get_time()
+        t1 = rospy.Time.now().to_sec()
 
-        traveled_angle = angular_speed * (t1 - t0)
+        traveled_angle = angular_speed_rad * (t1 - t0)
         rospy.spin
         loop_rate.sleep()
 
-        print traveled_angle
-        if (traveled_angle > desired_angle):
+        print radiansToDegree(traveled_angle)
+        if (radiansToDegree(traveled_angle) > desired_angle):
             rospy.loginfo("Reached")
             break
 
@@ -97,7 +97,7 @@ def rotate(angular_speed, desired_angle, isClockwise):
 
 
 def moveToGoal(goal_pose_x, goal_pose_y, distance_tolerance):
-    global x, y, yaw
+    global x, y, theta
     vel_msg = Twist()  # creating an instance of Twist message type
     loop_rate = rospy.Rate(100)
     E = 0
@@ -114,7 +114,7 @@ def moveToGoal(goal_pose_x, goal_pose_y, distance_tolerance):
         vel_msg.angular.y = 0
 
         angle = math.atan2(goal_pose_y - y, goal_pose_x - x)
-        vel_msg.angular.z = kp_angular * (angle - yaw)
+        vel_msg.angular.z = kp_angular * (angle - theta)
 
         vel_publisher.publish(vel_msg)
 
@@ -129,6 +129,19 @@ def moveToGoal(goal_pose_x, goal_pose_y, distance_tolerance):
 
 def degreesToRadians(angle_in_degrees):
     return angle_in_degrees * math.pi / 180
+
+
+def radiansToDegree(angle_in_radians):
+    return angle_in_radians * 180 / math.pi
+
+
+def setDesiredOrientation(angle_rad_desired):
+    angle_rad_diff = angle_rad_desired - theta
+    if (angle_rad_diff < 0):
+        clockwise = True
+    else:
+        clockwise = False
+    rotate(degreesToRadians(50), math.degrees(abs(angle_rad_diff)), clockwise)
 
 
 def Reset():
@@ -153,5 +166,7 @@ if __name__ == "__main__":
     # rotate(1, 180, True)
 
     # testing movetogoal method
-    moveToGoal(1, 1, 0.5)
+    # moveToGoal(1, 1, 0.5)
+    rotate(degreesToRadians(30), 90, True)
+    # setDesiredOrientation(degreesToRadians(90))
     Reset()
