@@ -13,8 +13,7 @@ yaw = 0
 
 
 def poseCallBack(pose_message):
-    global x
-    global y, z, yaw
+    global x, y, yaw
 
     x = pose_message.x
     y = pose_message.y
@@ -22,7 +21,7 @@ def poseCallBack(pose_message):
 
 
 def move(linear_speed, desired_distance, isForward):
-
+    global x
     vel_msg = Twist()  # creating an instance of Twist message type
 
     if (isForward):
@@ -60,6 +59,7 @@ def move(linear_speed, desired_distance, isForward):
 
 
 def rotate(angular_speed, desired_angle, isClockwise):
+    global yaw
     vel_msg = Twist()  # creating an instance of Twist message type
 
     if (isClockwise):
@@ -96,9 +96,35 @@ def rotate(angular_speed, desired_angle, isClockwise):
     vel_publisher.publish(vel_msg)
 
 
-def moveToGoal():
-    print movetot = goals
-    pass
+def moveToGoal(goal_pose_x, goal_pose_y, distance_tolerance):
+    global x, y, yaw
+    vel_msg = Twist()  # creating an instance of Twist message type
+    loop_rate = rospy.Rate(100)
+    E = 0
+    kp_linear = 0.5
+    kp_angular = 4
+
+    while True:
+        distance = math.sqrt((x-goal_pose_x)**2 + (y-goal_pose_y)**2)
+        vel_msg.linear.x = kp_linear * distance
+
+        vel_msg.linear.y = 0
+        vel_msg.linear.z = 0
+        vel_msg.angular.x = 0
+        vel_msg.angular.y = 0
+
+        angle = math.atan2(goal_pose_y - y, goal_pose_x - x)
+        vel_msg.angular.z = kp_angular * (angle - yaw)
+
+        vel_publisher.publish(vel_msg)
+
+        print "distance: {}, x: {}, y: {}".format(distance, x, y)
+        if (distance < distance_tolerance):
+            print("reached goal")
+            break
+    vel_msg.linear.x = 0
+    vel_msg.angular.z = 0
+    vel_publisher.publish(vel_msg)
 
 
 def degreesToRadians(angle_in_degrees):
@@ -119,6 +145,13 @@ if __name__ == "__main__":
     vel_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
     pose_subscriber = rospy.Subscriber("/turtle1/pose", Pose, poseCallBack)
     time.sleep(2)
-    move(2, 5, False)
-    rotate(1, 180, True)
+
+    # testing move method
+    # move(2, 5, False)
+
+    # testing rotate method
+    # rotate(1, 180, True)
+
+    # testing movetogoal method
+    moveToGoal(1, 1, 0.5)
     Reset()
