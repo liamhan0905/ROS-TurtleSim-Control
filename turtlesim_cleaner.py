@@ -6,9 +6,9 @@ from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 from std_srvs.srv import Empty
 
+# initialize x,y,theta
 x = 0
 y = 0
-z = 0
 theta = 0
 
 
@@ -22,6 +22,7 @@ def poseCallBack(pose_message):
 
 def move(linear_speed, desired_distance, isForward):
     global x, y
+    # set current position as initial position
     x0 = x
     y0 = y
     vel_msg = Twist()  # creating an instance of Twist message type
@@ -39,18 +40,19 @@ def move(linear_speed, desired_distance, isForward):
     vel_msg.angular.z = 0
     traveled_distance = 0.0
 
-    t0 = rospy.Time.now().to_sec()
+    # t0 = rospy.Time.now().to_sec()
     loop_rate = rospy.Rate(100)
 
     while True:
         # rospy.loginfo("Turtlesim moving forward")
         vel_publisher.publish(vel_msg)
-        t1 = rospy.Time.now().to_sec()
+        # t1 = rospy.Time.now().to_sec()
 
-        # traveled_distance + abs(0.5 * math.sqrt(((x-x0) ** 2) + ((y-y0) ** 2)))
-        traveled_distance = linear_speed * (t1 - t0)
-        # rospy.spin
-        # loop_rate.sleep()
+        loop_rate.sleep()
+
+        traveled_distance = abs(math.sqrt(((x-x0) ** 2) + ((y-y0) ** 2)))
+
+        # traveled_distance = linear_speed * (t1 - t0)
 
         print "distance: {}, x: {}, y: {}, theta: {}".format(traveled_distance, x, y, theta)
         if (traveled_distance > desired_distance):
@@ -86,12 +88,12 @@ def rotate(angular_speed_rad, desired_angle, isClockwise):
         vel_publisher.publish(vel_msg)
         t1 = rospy.Time.now().to_sec()
 
-        traveled_angle = angular_speed_rad * (t1 - t0)
-        rospy.spin
         loop_rate.sleep()
 
+        traveled_angle = angular_speed_rad * (t1 - t0)
+
         print radiansToDegree(traveled_angle)
-        if (traveled_angle > desired_angle):
+        if (traveled_angle > degreesToRadians(desired_angle)):
             rospy.loginfo("Reached")
             break
 
@@ -101,6 +103,7 @@ def rotate(angular_speed_rad, desired_angle, isClockwise):
 
 def moveToGoal(goal_pose, distance_tolerance):
     global x, y, theta
+
     vel_msg = Twist()  # creating an instance of Twist message type
     loop_rate = rospy.Rate(100)
     E = 0
@@ -138,13 +141,15 @@ def radiansToDegree(angle_in_radians):
     return angle_in_radians * 180 / math.pi
 
 
-def setDesiredOrientation(angle_rad_desired):
+def setDesiredOrientation(angle_deg_desired):
+    angle_rad_desired = degreesToRadians(angle_deg_desired)
     angle_rad_diff = angle_rad_desired - theta
+    print angle_rad_diff
     if (angle_rad_diff < 0):
         clockwise = True
     else:
         clockwise = False
-    rotate(degreesToRadians(50), angle_rad_diff, clockwise)
+    rotate(degreesToRadians(50), radiansToDegree(angle_rad_diff), clockwise)
 
 
 def Reset():
@@ -160,22 +165,19 @@ def gridClean():
     pose.x = 1
     pose.y = 1
     pose.theta = 0
-    moveToGoal(pose, 0.7)
+    moveToGoal(pose, 1)
     setDesiredOrientation(degreesToRadians(pose.theta))
 
-    print("here")
     move(2.0, 9.0, True)
-    print("2nd")
-    rotate(degreesToRadians(20), degreesToRadians(90), False)
-    print("3rd")
+    rotate(degreesToRadians(20), 90, False)
     move(2.0, 9.0, True)
-    rotate(degreesToRadians(20), degreesToRadians(90), False)
+    rotate(degreesToRadians(20), 90, False)
     move(2.0, 1.0, True)
-    rotate(degreesToRadians(20), degreesToRadians(90), False)
+    rotate(degreesToRadians(20), 90, False)
     move(2.0, 9.0, True)
-    rotate(degreesToRadians(20), degreesToRadians(90), True)
+    rotate(degreesToRadians(20), 90, True)
     move(2.0, 1.0, True)
-    rotate(degreesToRadians(20), degreesToRadians(90), True)
+    rotate(degreesToRadians(20), 90, True)
     move(2.0, 9.0, True)
     pass
 
@@ -204,14 +206,39 @@ def spiralClean():
 
 
 if __name__ == "__main__":
+    try:
 
-    rospy.init_node('turtlesim_move_node', anonymous=True)
-    vel_publisher = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
-    pose_subscriber = rospy.Subscriber("/turtle1/pose", Pose, poseCallBack)
-    time.sleep(2)
+        rospy.init_node('turtlesim_move_node', anonymous=True)
+        vel_publisher = rospy.Publisher(
+            '/turtle1/cmd_vel', Twist, queue_size=10)
+        pose_subscriber = rospy.Subscriber("/turtle1/pose", Pose, poseCallBack)
+        time.sleep(2)
 
-    # gridClean()
+        # testing move method going forward
+        # move(1.0, 5, True)
 
-    spiralClean()
+        # testing move method going backward
+        # move(1.0, 5, False)
 
-    Reset()
+        # testing rotate method going clockwise
+        # rotate(1.0, 90, True)
+
+        # testing rotate method going counter clockwise
+        # rotate(1.0, 90, False)
+
+        # testing goToGoal method
+        # desired_coord = Pose()
+        # desired_coord.x = 1
+        # desired_coord.y = 1
+        # moveToGoal(desired_coord, 0.01)
+
+        # testing gridClean method
+        # gridClean()
+
+        # testing spiralClean method
+        spiralClean()
+
+        # Reset()
+
+    except rospy.ROSInterruptException:
+        rospy.loginfo("Error: Node terminated")
